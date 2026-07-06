@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 // ─── Componente ─────────────────────────────────────────────────────────────
 
 export default function RegisterScreen({ navigation }) {
-  const { signUp } = useAuth();
+  const { signUp, signOut } = useAuth();
 
   const [email, setEmail]               = useState('');
   const [password, setPassword]         = useState('');
@@ -50,21 +50,25 @@ export default function RegisterScreen({ navigation }) {
   // ─── Submit ──────────────────────────────────────────────────────────────
 
   async function handleRegister() {
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      await signUp(email.trim(), password);
-      Alert.alert(
-        'Conta criada! 🎉',
-        'Verifique seu e-mail para confirmar o cadastro (se necessário) e faça login.',
-        [{ text: 'Ir para login', onPress: () => navigation.navigate('Login') }]
-      );
-    } catch (error) {
-      Alert.alert('Erro ao criar conta', error.message ?? 'Tente novamente');
-    } finally {
-      setLoading(false);
-    }
+  if (!validate()) return;
+  setLoading(true);
+  try {
+    await signUp(email.trim(), password);
+    // Se a confirmação de e-mail estiver desativada no Supabase, o signUp já
+    // loga o usuário automaticamente. Aqui a gente força o logout de propósito
+    // pra manter o fluxo de "criar conta → ir pro login manualmente".
+    await signOut();
+    Alert.alert(
+      'Conta criada! 🎉',
+      'Verifique seu e-mail para confirmar o cadastro (se necessário) e faça login.',
+      [{ text: 'Ir para login', onPress: () => navigation.navigate('Login') }]
+    );
+  } catch (error) {
+    Alert.alert('Erro ao criar conta', error.message ?? 'Tente novamente');
+  } finally {
+    setLoading(false);
   }
+}
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
